@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\sikm\\\\Desktop\\\\PythonProject\\\\RL_Learning\\\\CartPole\" && conda run -n RL python -c \"import gymnasium as gym; env = gym.make\\('CartPole-v1'\\); print\\('Reward range:', env.reward_range\\)\")"
+    ]
+  }
+}
