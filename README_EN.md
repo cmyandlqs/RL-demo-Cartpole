@@ -6,12 +6,22 @@ A collection of reinforcement learning algorithm implementations, supporting tra
 
 ## Supported Algorithms
 
-| Algorithm | Type | Status |
-|-----------|------|--------|
-| [DQN](algorithms/dqn/cartpole/) | Value-based | ✅ Implemented |
-| Policy Gradient | Policy-based | 🚧 TODO |
-| Actor-Critic | Actor-critic | 🚧 TODO |
-| PPO | Policy-based | 🚧 TODO |
+| Algorithm | Type | Status | Docs |
+|-----------|------|--------|------|
+| [DQN](algorithms/dqn/cartpole/) | Value-based | ✅ Implemented | [README](algorithms/dqn/cartpole/) |
+| [Policy Gradient](algorithms/policy_gradient/cartpole/) | Policy-based | ✅ Implemented | [README](algorithms/policy_gradient/cartpole/README.md) |
+| [Actor-Critic](algorithms/actor_critic/cartpole/) | Actor-critic | ✅ Implemented | [README](algorithms/actor_critic/cartpole/README.md) |
+| [PPO](algorithms/ppo/cartpole/) | Policy-based | ✅ Implemented | [README](algorithms/ppo/cartpole/README.md) |
+
+### Algorithm Comparison
+
+| Feature | DQN | Policy Gradient | Actor-Critic | PPO |
+|---------|-----|----------------|--------------|-----|
+| Learning | Q-function | Policy gradient | Policy+Value | Policy+Value |
+| Data Efficiency | ⭐⭐⭐⭐ | ⭐ | ⭐⭐ | ⭐⭐⭐ |
+| Stability | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Continuous Actions | ❌ | ✅ | ✅ | ✅ |
+| Difficulty | Medium | Simple | Medium | Medium |
 
 ## Requirements
 
@@ -29,8 +39,17 @@ pip install torch gymnasium numpy tqdm
 ### Training
 
 ```bash
-# Train DQN on CartPole
+# DQN
 python scripts/train.py --algo dqn --env cartpole
+
+# Policy Gradient
+python scripts/train.py --algo policy_gradient --env cartpole
+
+# Actor-Critic
+python scripts/train.py --algo actor_critic --env cartpole
+
+# PPO
+python scripts/train.py --algo ppo --env cartpole
 ```
 
 ### Testing
@@ -40,13 +59,13 @@ python scripts/train.py --algo dqn --env cartpole
 python scripts/test.py --algo dqn --env cartpole \
     --model outputs/dqn/cartpole/checkpoints/model.pth
 
-# Deterministic testing (with random seed)
-python scripts/test.py --algo dqn --env cartpole \
-    --model outputs/dqn/cartpole/checkpoints/model.pth --seed 42
+# Deterministic testing
+python scripts/test.py --algo ppo --env cartpole \
+    --model outputs/ppo/cartpole/checkpoints/model.pth --seed 42
 
-# Headless mode (no visualization window)
-python scripts/test.py --algo dqn --env cartpole \
-    --model outputs/dqn/cartpole/checkpoints/model.pth --no-render
+# Headless mode
+python scripts/test.py --algo actor_critic --env cartpole \
+    --model outputs/actor_critic/cartpole/checkpoints/model.pth --no-render
 ```
 
 ## Project Structure
@@ -54,71 +73,67 @@ python scripts/test.py --algo dqn --env cartpole \
 ```
 .
 ├── algorithms/              # Algorithm implementations
-│   ├── dqn/                 # DQN algorithm
-│   │   ├── cartpole/        # DQN on CartPole
-│   │   └── lunarlander/     # DQN on LunarLander
-│   ├── policy_gradient/
-│   ├── actor_critic/
-│   └── ppo/
+│   ├── dqn/                 # DQN
+│   ├── policy_gradient/     # Policy Gradient
+│   ├── actor_critic/        # Actor-Critic
+│   └── ppo/                 # PPO
 ├── outputs/                 # Training outputs
-│   └── dqn/
-│       └── cartpole/
-│           ├── checkpoints/ # Model weights
-│           └── logs/        # Training logs
-├── scripts/                 # Unified entry points
-│   ├── train.py            # Training entry
-│   └── test.py             # Testing entry
+├── scripts/                 # Entry points
+│   ├── train.py
+│   └── test.py
 ├── docs/                    # Documentation
-├── CLAUDE.md                # Project guide for Claude Code
+├── CLAUDE.md                # Project guide
 └── README.md                # This file
 ```
 
-## DQN on CartPole
+## CartPole-v1 Environment
 
-### Environment Details
-
-- **Environment**: CartPole-v1
-- **State Space**: 4-dimensional continuous vector `[cart_position, cart_velocity, pole_angle, pole_angular_velocity]`
+- **State Space**: 4D `[cart_position, cart_velocity, pole_angle, pole_angular_velocity]`
 - **Action Space**: 2 discrete actions (0 = push left, 1 = push right)
 - **Goal**: Keep the pole balanced as long as possible (max 500 steps)
 
-### Algorithm Features
+## Algorithm Details
 
-- **Experience Replay**: Break temporal correlations
-- **Target Network**: Stabilize training
-- **ε-greedy Exploration**: Balance exploration vs exploitation
-- **Position Penalty**: Prevent cart from hitting boundaries
+### DQN (Deep Q-Network)
 
-### Hyperparameters
+- **Core**: Learn Q(s,a) value function
+- **Techniques**: Experience Replay + Target Network
+- **Use Case**: Discrete action spaces
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `learning_rate` | 2e-3 | Adam learning rate |
-| `gamma` | 0.9 | Discount factor |
-| `epsilon_start` | 1.0 | Initial exploration rate |
-| `epsilon_end` | 0.01 | Minimum exploration rate |
-| `epsilon_decay` | 0.995 | Per-episode decay |
-| `buffer_capacity` | 10000 | Replay buffer capacity |
-| `batch_size` | 128 | Batch size |
-| `target_update_freq` | 10 | Target network sync frequency |
+Details: [algorithms/dqn/cartpole/](algorithms/dqn/cartpole/)
 
-### Training Results
+### Policy Gradient (REINFORCE)
 
-Training automatically saves Top-5 highest reward models to `outputs/dqn/cartpole/checkpoints/`.
+- **Core**: Directly optimize policy π(a|s)
+- **Formula**: ∇J = E[log π(a|s) · G_t]
+- **Feature**: High variance, but guaranteed convergence
 
-## Supported Environments
+Details: [algorithms/policy_gradient/cartpole/README.md](algorithms/policy_gradient/cartpole/README.md)
 
-| Environment | State Space | Action Space |
-|-------------|-------------|--------------|
-| CartPole-v1 | 4 (continuous) | 2 (discrete) |
-| LunarLander-v2 | 8 (continuous) | 4 (discrete) |
+### Actor-Critic
 
-## Adding New Algorithms
+- **Core**: Actor optimizes policy, Critic estimates value
+- **Advantage**: Uses A(s,a) = G_t - V(s) to reduce variance
+- **Feature**: More efficient than pure Policy Gradient
 
-1. Create `{algo}_{env}.py` in `algorithms/{algo_name}/{env_name}/`
-2. Implement training script with `main()` function
-3. Add routing function in `scripts/train.py`
-4. Add testing function in `scripts/test.py`
+Details: [algorithms/actor_critic/cartpole/README.md](algorithms/actor_critic/cartpole/README.md)
+
+### PPO (Proximal Policy Optimization)
+
+- **Core**: Clip policy updates to prevent large changes
+- **Formula**: L = -E[min(r·A, clip(r)·A)]
+- **Feature**: Stable training, multiple data reuse
+
+Details: [algorithms/ppo/cartpole/README.md](algorithms/ppo/cartpole/README.md)
+
+## Hyperparameter Quick Reference
+
+| Algorithm | Learning Rate | Gamma | Special Params |
+|-----------|--------------|-------|----------------|
+| DQN | 2e-3 | 0.9 | ε: 1.0→0.01 |
+| PG | 1e-3 | 0.99 | - |
+| AC | 1e-3 | 0.99 | - |
+| PPO | 3e-4 | 0.99 | clip=0.2, λ=0.95 |
 
 ## References
 

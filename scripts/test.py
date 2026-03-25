@@ -74,14 +74,99 @@ def test_dqn_lunarlander(model_path, num_episodes=5, seed=None, render=True):
 
 def test_ppo_cartpole(model_path, num_episodes=5, seed=None, render=True):
     """测试 PPO on CartPole"""
-    print("Error: PPO on CartPole not implemented yet.")
-    sys.exit(1)
+    from algorithms.ppo.cartpole.ppo_cartpole import ActorCriticNet
+    from torch.distributions import Categorical
+
+    env = gym.make("CartPole-v1", render_mode="human" if render else None)
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.n
+
+    # 加载 Actor-Critic 网络
+    ac_net = ActorCriticNet(state_dim, action_dim)
+    ac_net.load_state_dict(torch.load(model_path))
+    ac_net.eval()
+    print(f" 已加载模型: {model_path}")
+
+    rewards = []
+    for episode in range(num_episodes):
+        state, info = env.reset(seed=seed + episode if seed is not None else None)
+        done = False
+        episode_reward = 0
+
+        while not done:
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                probs, _ = ac_net(state_tensor)
+            # 采样动作
+            dist = Categorical(probs)
+            action = dist.sample()
+
+            next_state, reward, terminated, truncated, info = env.step(action.item())
+            done = terminated or truncated
+            episode_reward += reward
+            state = next_state
+
+        rewards.append(episode_reward)
+        print(f" Episode {episode+1}: Reward = {episode_reward}")
+
+    env.close()
+    print(f"\n 测试完成! 平均奖励: {np.mean(rewards):.1f} ± {np.std(rewards):.1f}")
 
 
 def test_ppo_lunarlander(model_path, num_episodes=5, seed=None, render=True):
     """测试 PPO on LunarLander"""
     print("Error: PPO on LunarLander not implemented yet.")
     sys.exit(1)
+
+
+def test_actor_critic_cartpole(model_path, num_episodes=5, seed=None, render=True):
+    """测试 Actor-Critic on CartPole"""
+    from algorithms.actor_critic.cartpole.actor_critic_cartpole import ActorNetwork
+    from torch.distributions import Categorical
+
+    env = gym.make("CartPole-v1", render_mode="human" if render else None)
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.n
+
+    # 加载 Actor 网络（Critic 只用于训练）
+    actor = ActorNetwork(state_dim, action_dim)
+    checkpoint = torch.load(model_path)
+    actor.load_state_dict(checkpoint['actor'])
+    actor.eval()
+    print(f" 已加载模型: {model_path}")
+
+    rewards = []
+    for episode in range(num_episodes):
+        state, info = env.reset(seed=seed + episode if seed is not None else None)
+        done = False
+        episode_reward = 0
+
+        while not done:
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                probs = actor(state_tensor)
+            # 采样动作
+            dist = Categorical(probs)
+            action = dist.sample()
+
+            next_state, reward, terminated, truncated, info = env.step(action.item())
+            done = terminated or truncated
+            episode_reward += reward
+            state = next_state
+
+        rewards.append(episode_reward)
+        print(f" Episode {episode+1}: Reward = {episode_reward}")
+
+    env.close()
+    print(f"\n 测试完成! 平均奖励: {np.mean(rewards):.1f} ± {np.std(rewards):.1f}")
 
 
 def test_policy_gradient_cartpole(model_path, num_episodes=5, seed=None, render=True):
@@ -134,6 +219,7 @@ TEST_FUNC = {
     ("dqn", "cartpole"): test_dqn_cartpole,
     ("dqn", "lunarlander"): test_dqn_lunarlander,
     ("policy_gradient", "cartpole"): test_policy_gradient_cartpole,
+    ("actor_critic", "cartpole"): test_actor_critic_cartpole,
     ("ppo", "cartpole"): test_ppo_cartpole,
     ("ppo", "lunarlander"): test_ppo_lunarlander,
 }

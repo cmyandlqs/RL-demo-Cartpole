@@ -6,12 +6,22 @@
 
 ## 支持的算法
 
-| 算法 | 类型 | 状态 |
-|-----|------|-----|
-| [DQN](algorithms/dqn/cartpole/) | Value-based | ✅ 已实现 |
-| Policy Gradient | Policy-based | 🚧 待实现 |
-| Actor-Critic | Actor-critic | 🚧 待实现 |
-| PPO | Policy-based | 🚧 待实现 |
+| 算法 | 类型 | 状态 | 文档 |
+|-----|------|-----|------|
+| [DQN](algorithms/dqn/cartpole/) | Value-based | ✅ 已实现 | [README](algorithms/dqn/cartpole/) |
+| [Policy Gradient](algorithms/policy_gradient/cartpole/) | Policy-based | ✅ 已实现 | [README](algorithms/policy_gradient/cartpole/README.md) |
+| [Actor-Critic](algorithms/actor_critic/cartpole/) | Actor-critic | ✅ 已实现 | [README](algorithms/actor_critic/cartpole/README.md) |
+| [PPO](algorithms/ppo/cartpole/) | Policy-based | ✅ 已实现 | [README](algorithms/ppo/cartpole/README.md) |
+
+### 算法对比
+
+| 特性 | DQN | Policy Gradient | Actor-Critic | PPO |
+|-----|-----|----------------|--------------|-----|
+| 学习方式 | Q 值函数 | 策略梯度 | 策略+价值 | 策略+价值 |
+| 数据效率 | ⭐⭐⭐⭐ | ⭐ | ⭐⭐ | ⭐⭐⭐ |
+| 训练稳定性 | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| 连续动作 | ❌ | ✅ | ✅ | ✅ |
+| 实现难度 | 中 | 简单 | 中 | 中 |
 
 ## 环境要求
 
@@ -29,8 +39,17 @@ pip install torch gymnasium numpy tqdm
 ### 训练
 
 ```bash
-# 训练 DQN on CartPole
+# DQN
 python scripts/train.py --algo dqn --env cartpole
+
+# Policy Gradient
+python scripts/train.py --algo policy_gradient --env cartpole
+
+# Actor-Critic
+python scripts/train.py --algo actor_critic --env cartpole
+
+# PPO
+python scripts/train.py --algo ppo --env cartpole
 ```
 
 ### 测试
@@ -41,12 +60,12 @@ python scripts/test.py --algo dqn --env cartpole \
     --model outputs/dqn/cartpole/checkpoints/model.pth
 
 # 确定性测试（设置随机种子）
-python scripts/test.py --algo dqn --env cartpole \
-    --model outputs/dqn/cartpole/checkpoints/model.pth --seed 42
+python scripts/test.py --algo ppo --env cartpole \
+    --model outputs/ppo/cartpole/checkpoints/model.pth --seed 42
 
-# 无头模式测试（不显示可视化窗口）
-python scripts/test.py --algo dqn --env cartpole \
-    --model outputs/dqn/cartpole/checkpoints/model.pth --no-render
+# 无头模式测试
+python scripts/test.py --algo actor_critic --env cartpole \
+    --model outputs/actor_critic/cartpole/checkpoints/model.pth --no-render
 ```
 
 ## 项目结构
@@ -55,70 +74,70 @@ python scripts/test.py --algo dqn --env cartpole \
 .
 ├── algorithms/              # 算法实现
 │   ├── dqn/                 # DQN 算法
-│   │   ├── cartpole/        # DQN on CartPole
-│   │   └── lunarlander/     # DQN on LunarLander
+│   ├── policy_gradient/     # Policy Gradient 算法
+│   ├── actor_critic/        # Actor-Critic 算法
+│   └── ppo/                 # PPO 算法
+├── outputs/                 # 训练输出
+│   ├── dqn/
 │   ├── policy_gradient/
 │   ├── actor_critic/
 │   └── ppo/
-├── outputs/                 # 训练输出
-│   └── dqn/
-│       └── cartpole/
-│           ├── checkpoints/ # 模型权重
-│           └── logs/        # 训练日志
 ├── scripts/                 # 统一入口
 │   ├── train.py            # 训练入口
 │   └── test.py             # 测试入口
 ├── docs/                    # 文档
-├── CLAUDE.md                # Claude Code 项目指南
+├── CLAUDE.md                # 项目指南
 └── README.md                # 本文件
 ```
 
-## DQN on CartPole
+## CartPole-v1 环境
 
-### 环境说明
-
-- **环境**: CartPole-v1
-- **状态空间**: 4 维连续向量 `[小车位置, 小车速度, 杆子角度, 杆角速度]`
-- **动作空间**: 2 个离散动作 (0 = 向左推, 1 = 向右推)
+- **状态空间**: 4 维 `[小车位置, 小车速度, 杆子角度, 杆角速度]`
+- **动作空间**: 2 个离散动作 (0 = 向左, 1 = 向右)
 - **目标**: 尽可能长时间保持杆子平衡（最多 500 步）
 
-### 算法特点
+## 算法详解
 
-- **经验回放** (Experience Replay): 打破时间相关性
-- **目标网络** (Target Network): 稳定训练
-- **ε-greedy 探索**: 平衡探索与利用
-- **位置惩罚**: 防止小车撞墙
+### DQN (Deep Q-Network)
 
-### 超参数
+- **核心**: 学习 Q(s,a) 值函数
+- **技术**: 经验回放 + 目标网络
+- **适用**: 离散动作空间
 
-| 参数 | 默认值 | 说明 |
-|-----|-------|------|
-| `learning_rate` | 2e-3 | Adam 学习率 |
-| `gamma` | 0.9 | 折扣因子 |
-| `epsilon_start` | 1.0 | 初始探索率 |
-| `epsilon_end` | 0.01 | 最小探索率 |
-| `epsilon_decay` | 0.995 | 探索率衰减 |
-| `buffer_capacity` | 10000 | 经验池容量 |
-| `batch_size` | 128 | 批量大小 |
-| `target_update_freq` | 10 | 目标网络同步频率 |
+详细说明: [algorithms/dqn/cartpole/](algorithms/dqn/cartpole/)
 
-### 训练结果
+### Policy Gradient (REINFORCE)
 
-训练会自动保存 Top-5 高分模型到 `outputs/dqn/cartpole/checkpoints/`。
+- **核心**: 直接优化策略 π(a|s)
+- **公式**: ∇J = E[log π(a|s) · G_t]
+- **特点**: 高方差，但理论保证收敛
 
-## 支持的环境
+详细说明: [algorithms/policy_gradient/cartpole/README.md](algorithms/policy_gradient/cartpole/README.md)
 
-| 环境 | 状态空间 | 动作空间 |
-|-----|---------|---------|
-| CartPole-v1 | 4 (连续) | 2 (离散) |
-| LunarLander-v2 | 8 (连续) | 4 (离散) |
+### Actor-Critic
 
-## 添加新算法
+- **核心**: Actor 优化策略，Critic 估计价值
+- **优势**: 使用 A(s,a) = G_t - V(s) 减少方差
+- **特点**: 比纯 Policy Gradient 更高效
 
-1. 在 `algorithms/{algo_name}/{env_name}/` 下创建 `{algo}_{env}.py`
-2. 实现包含 `main()` 函数的训练脚本
-3. 在 `scripts/train.py` 添加路由函数
-4. 在 `scripts/test.py` 添加测试函数
+详细说明: [algorithms/actor_critic/cartpole/README.md](algorithms/actor_critic/cartpole/README.md)
+
+### PPO (Proximal Policy Optimization)
+
+- **核心**: 裁剪策略更新幅度
+- **公式**: L = -E[min(r·A, clip(r)·A)]
+- **特点**: 稳定训练，多次利用数据
+
+详细说明: [algorithms/ppo/cartpole/README.md](algorithms/ppo/cartpole/README.md)
+
+## 超参数速查
+
+| 算法 | Learning Rate | Gamma | 特殊参数 |
+|-----|--------------|-------|---------|
+| DQN | 2e-3 | 0.9 | ε: 1.0→0.01 |
+| PG | 1e-3 | 0.99 | - |
+| AC | 1e-3 | 0.99 | - |
+| PPO | 3e-4 | 0.99 | clip=0.2, λ=0.95 |
 
 ## 参考文档
 
