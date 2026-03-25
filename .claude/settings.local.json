@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"D:\\\\sikm\\\\Desktop\\\\PythonProject\\\\RL_Learning\\\\CartPole\" && conda run -n RL python -c \"import gymnasium as gym; env = gym.make\\('CartPole-v1'\\); print\\('Reward range:', env.reward_range\\)\")"
+      "Bash(cd \"D:\\\\sikm\\\\Desktop\\\\PythonProject\\\\RL_Learning\\\\CartPole\" && conda run -n RL python -c \"import gymnasium as gym; env = gym.make\\('CartPole-v1'\\); print\\('Reward range:', env.reward_range\\)\")",
+      "Bash(python -c \"import gymnasium as gym; import inspect; env = gym.make\\('CartPole-v1'\\); print\\(inspect.getsourcefile\\(env.unwrapped.__class__\\)\\)\")",
+      "Bash(D:\\\\Miniconda3\\\\envs\\\\RL\\\\python.exe -c \"import gymnasium as gym; import inspect; env = gym.make\\('CartPole-v1'\\); print\\(inspect.getsourcefile\\(env.unwrapped.__class__\\)\\)\")",
+      "Bash(\"D:/Miniconda3/envs/RL/python.exe\" -c \"import gymnasium as gym; env = gym.make\\('CartPole-v1'\\); print\\(env.spec.max_episode_steps\\)\")",
+      "Bash(\"D:/Miniconda3/envs/RL/python.exe\" -c \"import gymnasium as gym; import inspect; env = gym.make\\('CartPole-v1', render_mode='rgb_array'\\); print\\('=== CartPole 终止条件 ==='\\); print\\('最大步数:', env.spec.max_episode_steps\\); print\\('x阈值:', env.unwrapped.x_threshold\\); print\\('theta阈值:', env.unwrapped.theta_threshold_radians\\)\")",
+      "Bash(cd \"D:\\\\sikm\\\\Desktop\\\\PythonProject\\\\RL_Learning\\\\CartPole\" && python scripts/train.py --help)",
+      "Bash(cd \"D:\\\\sikm\\\\Desktop\\\\PythonProject\\\\RL_Learning\\\\CartPole\" && python scripts/test.py --help)"
     ]
   }
 }
