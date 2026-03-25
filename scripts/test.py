@@ -3,6 +3,9 @@
 
 使用方式:
     python scripts/test.py --algo dqn --env cartpole --model outputs\dqn\cartpole\checkpoints\dqn_model_ep902_reward479.pth
+    
+    python scripts/test.py --algo policy_gradient --env cartpole --model outputs\policy_gradient\cartpole\checkpoints\pg_model_ep215_reward500.pth
+    
     python scripts/test.py --algo ppo --env cartpole --model outputs/ppo/cartpole/checkpoints/model.pth
 
     --seed: 设置随机种子（可选，用于确定性测试）
@@ -81,10 +84,56 @@ def test_ppo_lunarlander(model_path, num_episodes=5, seed=None, render=True):
     sys.exit(1)
 
 
+def test_policy_gradient_cartpole(model_path, num_episodes=5, seed=None, render=True):
+    """测试 Policy Gradient on CartPole"""
+    from algorithms.policy_gradient.cartpole.policy_gradient_cartpole import PolicyNetwork
+    from torch.distributions import Categorical
+
+    env = gym.make("CartPole-v1", render_mode="human" if render else None)
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.n
+
+    # 加载策略网络
+    policy_net = PolicyNetwork(state_dim, action_dim)
+    policy_net.load_state_dict(torch.load(model_path))
+    policy_net.eval()
+    print(f" 已加载模型: {model_path}")
+
+    rewards = []
+    for episode in range(num_episodes):
+        state, info = env.reset(seed=seed + episode if seed is not None else None)
+        done = False
+        episode_reward = 0
+
+        while not done:
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                probs = policy_net(state_tensor)
+            # 采样动作（保持策略的随机性）
+            dist = Categorical(probs)
+            action = dist.sample()
+
+            next_state, reward, terminated, truncated, info = env.step(action.item())
+            done = terminated or truncated
+            episode_reward += reward
+            state = next_state
+
+        rewards.append(episode_reward)
+        print(f" Episode {episode+1}: Reward = {episode_reward}")
+
+    env.close()
+    print(f"\n 测试完成! 平均奖励: {np.mean(rewards):.1f} ± {np.std(rewards):.1f}")
+
+
 # 测试函数映射
 TEST_FUNC = {
     ("dqn", "cartpole"): test_dqn_cartpole,
     ("dqn", "lunarlander"): test_dqn_lunarlander,
+    ("policy_gradient", "cartpole"): test_policy_gradient_cartpole,
     ("ppo", "cartpole"): test_ppo_cartpole,
     ("ppo", "lunarlander"): test_ppo_lunarlander,
 }
